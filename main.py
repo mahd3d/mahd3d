@@ -20,8 +20,8 @@ class Line:
     z2 = 0
     m = (1, 1, 1)
 
-    def equation(s):
-        return f"= f{s.p1} + t {s.p2}"
+    def equation(self):
+        return f"= f{self.p1} + t {self.p2}"
 
 
 class Sphere:
@@ -32,8 +32,8 @@ class Sphere:
     r = 0.5
     d = 1.0
 
-    def equation(s):
-        return f"(x-{s.x})²+(y-{s.y})²+(y-{s.y})² = {s.r**2}"
+    def equation(self):
+        return f"(x-{self.x})²+(y-{self.y})²+(y-{self.y})² = {self.r ** 2}"
 
 
 @timeit
@@ -52,7 +52,7 @@ def load_e57(
             continue
         try:
             value = getattr(raw_header, attr)
-        except pye57.libe57.E57Exception as e:
+        except pye57.libe57.E57Exception:
             continue
         else:
             header[attr] = value
@@ -125,6 +125,8 @@ def plot_histograms(
     points: pd.DataFrame,
 ) -> bool:
     for col in points:
+        if col not in ["x", "y", "z"]:
+            continue
         fig = px.histogram(points, x=col)
         fig.show()
     return True
@@ -169,6 +171,7 @@ def plot_3d(
 
 def plot_3d_json() -> None:
     import json
+
     with open("data/json/objects.example.json", "r") as f:
         data = json.load(f)
 
@@ -176,33 +179,47 @@ def plot_3d_json() -> None:
     for layer_index, layer_value in enumerate(data["layers"]):
         cubes += [[]]
         for i, v in enumerate(layer_value["points"]):
-            cubes[layer_index] += [(v["x"], v["y"], 0.0)]
-            cubes[layer_index] += [(v["x"], v["y"], layer_value["height"])]
+            cubes[layer_index] += [(v["x"], v["y"], 0.1)]
+            cubes[layer_index] += [(v["x"], v["y"], float(layer_value["height"]))]
+            cubes[layer_index].sort(key=lambda x: (x[2], x[1], x[0]))
+
+    # fixed list, do not change or cubes will look weird
+    i = [0, 3, 4, 7, 0, 6, 1, 7, 0, 5, 2, 7]
+    j = [1, 2, 5, 6, 2, 4, 3, 5, 4, 1, 6, 3]
+    k = [3, 0, 7, 4, 6, 0, 7, 1, 5, 0, 7, 2]
 
     meshes: list = []
-    for cube in cubes[:19]:
+    for index, cube in enumerate(cubes[:19]):
+        x = [i_[0] for i_ in cube]
+        y = [i_[1] for i_ in cube]
+        z = [i_[2] for i_ in cube]
+
         meshes += [
             go.Mesh3d(
                 # 8 vertices of a cube
-                x=[i[0] for i in cube],
-                y=[i[1] for i in cube],
-                z=[i[2] for i in cube],
+                x=x,
+                y=y,
+                z=z,
                 # colorbar_title='z',
-                colorscale=[[0, 'gold'],
-                            [0.5, 'mediumturquoise'],
-                            [1, 'magenta']],
+                colorscale=[[0, "gold"], [0.5, "mediumturquoise"], [1, "magenta"]],
                 # Intensity of each vertex, which will be interpolated and color-coded
                 intensity=np.linspace(0, 1, 8, endpoint=True),
-                # # i, j and k give the vertices of triangles
-                # i=[7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
-                # j=[3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
-                # k=[0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
-                name='y',
-                showscale=True
+                # i, j and k give the vertices of triangles
+                i=i,
+                j=j,
+                k=k,
+                name="y",
+                showscale=True,
             )
         ]
 
     fig = go.Figure(data=meshes)
+
+    # tight layout
+    fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
+
+    # proportional aspect ratio with data, alternatively cube or manual (see below)
+    fig.update_layout(scene_aspectmode="data")
 
     fig.show()
     pass
@@ -212,14 +229,14 @@ def main() -> None:
     # Detail size, smaller is more detailed but slower
     # 1000 is recommended for displaying with Plotly, 300 is the minimum
     step: int = 3000
-    filename = f"data/computed/points_{step}.v2.df.feather"
+    filename: str = f"data/computed/points_{step}.v2.df.feather"
 
     try:
         print(
             f"Trying to use existing points with step size of {step} from saved points file."
         )
         p = pd.read_feather(filename)
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         print(f"Couldn't get points with step size of {step}, loading raw data.")
         data, header = load_e57()
         p: pd.DataFrame = get_points(data, step)
@@ -232,17 +249,17 @@ def main() -> None:
     p["0"] = 0
     p = get_points_with_computed(p)
 
-    # p = p[~p["roof"] & ~p["floor"]]
-    p = p[~p["roof"]]
+    mid = p[~p["roof"] & ~p["floor"]]
+    # mid = p[~p["roof"]]
     # points = points[(points["z"] >= -1.5) & (points["z"] <= -1.0)]
     # points["a"] = points.apply(compute_alpha, axis=1)
 
     plot_3d(
-        x=p["x"],
-        y=p["y"],
-        z=p["z"],
-        text=p.index,
-        color=p["rgba"],
+        x=mid["x"],
+        y=mid["y"],
+        z=mid["z"],
+        text=mid.index,
+        color=mid["rgba"],
     )
 
     f = p[p["floor"]].copy()
@@ -280,6 +297,7 @@ def main() -> None:
         color=f["count"],
     )
 
+    # TODO: unskew everything
     # TODO: build json
 
     plot_3d_json()
