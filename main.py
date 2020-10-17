@@ -1,12 +1,14 @@
-import numpy as np
-import pye57
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
-import plotly.graph_objects as go
-import pandas as pd
-import plotly.express as px
-from typing import Union, Tuple, Optional
 import itertools
 import json
+import uuid
+from typing import Union, Tuple, Optional
+
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import pye57
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 
 from utils import timeit
 
@@ -146,7 +148,7 @@ def plot_3d_json(
     for layer_index, layer_value in enumerate(data["layers"]):
         cubes += [[]]
         for i, v in enumerate(layer_value["points"]):
-            cubes[layer_index] += [(v["x"], v["y"], 0.1)]
+            cubes[layer_index] += [(v["x"], v["y"], 0.0)]
             cubes[layer_index] += [(v["x"], v["y"], float(layer_value["height"]))]
             cubes[layer_index].sort(key=lambda _x: (_x[2], _x[1], _x[0]))
 
@@ -233,7 +235,7 @@ def get_cubes(
 
     v["count"] = 0
 
-    grid: int = 1
+    grid: float = 1.0
     counts = pd.DataFrame(
         data={
             "x": [],
@@ -274,7 +276,7 @@ def get_cubes(
     v.loc[v["count"] > 20, "count"] = 20
     v = v[v["count"] > 5]
 
-    return v
+    return counts
 
 
 def main() -> None:
@@ -325,21 +327,18 @@ def main() -> None:
     # )
 
     v = get_cubes(p[~p["roof"] & ~p["floor"]])
-    v["x2"] = v["x"] + 1
-    v["y2"] = v["y"] + 1
-
-    import uuid
+    v = v[v["c"] > 5]
 
     layers = []
     for index, row in v.iterrows():
         layer = {
             "points": [
                 {"x": row["x"], "y": row["y"], "id": 1},
-                {"x": row["x2"], "y": row["y"], "id": 2},
-                {"x": row["x2"], "y": row["y2"], "id": 3},
-                {"x": row["x"], "y": row["y2"], "id": 4},
+                {"x": row["x"]+1, "y": row["y"], "id": 2},
+                {"x": row["x"]+1, "y": row["y"]+1, "id": 3},
+                {"x": row["x"], "y": row["y"]+1, "id": 4},
             ],
-            "height": row["z"] + 1.5,  # hardcoded floor level
+            "height": row["z"] + 2.4995,  # hardcoded floor level
             "shape_type": "obstacle",
             "shapeId": str(uuid.uuid4()),
         }
@@ -355,6 +354,9 @@ def main() -> None:
         "marker_grid": 1,
         "sat_grid": 10,
     }
+
+    with open("data/result.json", "w") as f:
+        json.dump(objects, f, indent=2)
 
     # plot_3d(
     #     x=v["x"],
