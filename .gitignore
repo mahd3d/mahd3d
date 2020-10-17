@@ -9,4 +9,7 @@ __pycache__/
 *.pth
 # Data
 *.pickle
+*.hdf
+*.parquet
+*.feather
 *.e57
