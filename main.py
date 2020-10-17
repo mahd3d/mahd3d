@@ -6,9 +6,9 @@ import plotly.express as px
 from typing import Union, Tuple, Optional
 import itertools
 import json
-from DataRotation import *
-from LoadE57 import *
-from Plots import *
+from DataRotation import correctlyRotateDataFrame, rotate
+from LoadE57 import load_e57
+from Plots import plot_3d, plot_3d_json
 
 from utils import timeit
 
