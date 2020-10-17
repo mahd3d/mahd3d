@@ -1,0 +1,12 @@
+# Python
+.mypy_cache/
+.venv/
+__pycache__/
+*.py[cod]
+# PyCharm
+.idea/
+# Model
+*.pth
+# Data
+data/computed/points_1000.df.pickle
+*.e57
