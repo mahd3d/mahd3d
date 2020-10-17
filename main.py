@@ -172,41 +172,43 @@ def plot_3d_json() -> None:
     with open("data/json/objects.example.json", "r") as f:
         data = json.load(f)
 
-    cubes = []
+    cubes: list = []
     for layer_index, layer_value in enumerate(data["layers"]):
         cubes += [[]]
         for i, v in enumerate(layer_value["points"]):
-            cubes[layer_index] += [(v["x"], v["y"], 0)]
+            cubes[layer_index] += [(v["x"], v["y"], 0.0)]
             cubes[layer_index] += [(v["x"], v["y"], layer_value["height"])]
 
-    fig = go.Figure(data=[
-        go.Mesh3d(
-            # 8 vertices of a cube
-            x=[i[0] for i in cubes[0]],
-            y=[i[1] for i in cubes[1]],
-            z=[i[2] for i in cubes[2]],
-            colorbar_title='z',
-            colorscale=[[0, 'gold'],
-                        [0.5, 'mediumturquoise'],
-                        [1, 'magenta']],
-            # Intensity of each vertex, which will be interpolated and color-coded
-            intensity=np.linspace(0, 1, 8, endpoint=True),
-            # # i, j and k give the vertices of triangles
-            # i=[7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
-            # j=[3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
-            # k=[0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
-            name='y',
-            showscale=True
-        )
-    ])
+    meshes: list = []
+    for cube in cubes[:19]:
+        meshes += [
+            go.Mesh3d(
+                # 8 vertices of a cube
+                x=[i[0] for i in cube],
+                y=[i[1] for i in cube],
+                z=[i[2] for i in cube],
+                # colorbar_title='z',
+                colorscale=[[0, 'gold'],
+                            [0.5, 'mediumturquoise'],
+                            [1, 'magenta']],
+                # Intensity of each vertex, which will be interpolated and color-coded
+                intensity=np.linspace(0, 1, 8, endpoint=True),
+                # # i, j and k give the vertices of triangles
+                # i=[7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+                # j=[3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+                # k=[0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+                name='y',
+                showscale=True
+            )
+        ]
+
+    fig = go.Figure(data=meshes)
 
     fig.show()
     pass
 
 
 def main() -> None:
-    plot_3d_json()
-
     # Detail size, smaller is more detailed but slower
     # 1000 is recommended for displaying with Plotly, 300 is the minimum
     step: int = 3000
@@ -277,6 +279,10 @@ def main() -> None:
         text=f["count"],
         color=f["count"],
     )
+
+    # TODO: build json
+
+    plot_3d_json()
 
 
 if __name__ == "__main__":
