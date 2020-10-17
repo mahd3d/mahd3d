@@ -169,7 +169,7 @@ def plot_3d(
 
 def plot_3d_json() -> None:
     import json
-    with open("data/json/example.json", "r") as f:
+    with open("data/json/objects.example.json", "r") as f:
         data = json.load(f)
 
     cubes = []
@@ -205,7 +205,7 @@ def plot_3d_json() -> None:
 
 
 def main() -> None:
-    #plot_3d_json()
+    plot_3d_json()
 
     # Detail size, smaller is more detailed but slower
     # 1000 is recommended for displaying with Plotly, 300 is the minimum
