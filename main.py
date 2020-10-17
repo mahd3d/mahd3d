@@ -4,36 +4,11 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import plotly.graph_objects as go
 import pandas as pd
 import plotly.express as px
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional
+import itertools
+import json
 
 from utils import timeit
-
-
-class Line:
-    p1 = (0, 0, 0)
-    x1 = 0
-    y1 = 0
-    z1 = 0
-    p2 = (1, 1, 1)
-    x2 = 0
-    y2 = 0
-    z2 = 0
-    m = (1, 1, 1)
-
-    def equation(self):
-        return f"= f{self.p1} + t {self.p2}"
-
-
-class Sphere:
-    p = (0.5, 0.5, 0.5)
-    x = 0.5
-    y = 0.5
-    z = 0.5
-    r = 0.5
-    d = 1.0
-
-    def equation(self):
-        return f"(x-{self.x})²+(y-{self.y})²+(y-{self.y})² = {self.r ** 2}"
 
 
 @timeit
@@ -98,8 +73,6 @@ def get_points_with_computed(
     points.loc[points["z"] > 3.4, ["roof"]] = True
     points["floor"] = False
     points.loc[points["z"] < -1.5, ["floor"]] = True
-    # points["roof"] = points.apply(compute_roof, axis=1)
-    # points["floor"] = points.apply(compute_floor, axis=1)
 
     return points
 
@@ -112,24 +85,14 @@ def compute_rgba(
     return f'rgba({row["r"]}, {row["g"]}, {row["b"]}, {row["a"]:.2f})'
 
 
-def compute_alpha(
-    row,
-) -> float:
-    if row["roof"] or row["floor"]:
-        return 0.3
-    else:
-        return 1.0
-
-
 def plot_histograms(
     points: pd.DataFrame,
-) -> bool:
+) -> None:
     for col in points:
         if col not in ["x", "y", "z"]:
             continue
         fig = px.histogram(points, x=col)
         fig.show()
-    return True
 
 
 @timeit
@@ -169,11 +132,15 @@ def plot_3d(
     fig.show()
 
 
-def plot_3d_json() -> None:
-    import json
-
-    with open("data/json/objects.example.json", "r") as f:
-        data = json.load(f)
+def plot_3d_json(
+    file: str = "data/json/objects.example.json",
+    objects: Optional[dict] = None,
+) -> None:
+    if objects is None:
+        with open(file, "r") as f:
+            data = json.load(f)
+    else:
+        data = objects
 
     cubes: list = []
     for layer_index, layer_value in enumerate(data["layers"]):
@@ -181,7 +148,7 @@ def plot_3d_json() -> None:
         for i, v in enumerate(layer_value["points"]):
             cubes[layer_index] += [(v["x"], v["y"], 0.1)]
             cubes[layer_index] += [(v["x"], v["y"], float(layer_value["height"]))]
-            cubes[layer_index].sort(key=lambda x: (x[2], x[1], x[0]))
+            cubes[layer_index].sort(key=lambda _x: (_x[2], _x[1], _x[0]))
 
     # fixed list, do not change or cubes will look weird
     i = [0, 3, 4, 7, 0, 6, 1, 7, 0, 5, 2, 7]
@@ -189,7 +156,7 @@ def plot_3d_json() -> None:
     k = [3, 0, 7, 4, 6, 0, 7, 1, 5, 0, 7, 2]
 
     meshes: list = []
-    for index, cube in enumerate(cubes[:19]):
+    for index, cube in enumerate(cubes):
         x = [i_[0] for i_ in cube]
         y = [i_[1] for i_ in cube]
         z = [i_[2] for i_ in cube]
@@ -225,46 +192,12 @@ def plot_3d_json() -> None:
     pass
 
 
-def main() -> None:
-    # Detail size, smaller is more detailed but slower
-    # 1000 is recommended for displaying with Plotly, 300 is the minimum
-    step: int = 3000
-    filename: str = f"data/computed/points_{step}.v2.df.feather"
+def get_squares(
+    p: pd.DataFrame,
+) -> pd.DataFrame:
+    f = p.copy()
 
-    try:
-        print(
-            f"Trying to use existing points with step size of {step} from saved points file."
-        )
-        p = pd.read_feather(filename)
-    except FileNotFoundError:
-        print(f"Couldn't get points with step size of {step}, loading raw data.")
-        data, header = load_e57()
-        p: pd.DataFrame = get_points(data, step)
-        p.to_feather(filename)
-    finally:
-        print("p loaded")
-
-    # plot_histograms(p)
-
-    p["0"] = 0
-    p = get_points_with_computed(p)
-
-    mid = p[~p["roof"] & ~p["floor"]]
-    # mid = p[~p["roof"]]
-    # points = points[(points["z"] >= -1.5) & (points["z"] <= -1.0)]
-    # points["a"] = points.apply(compute_alpha, axis=1)
-
-    plot_3d(
-        x=mid["x"],
-        y=mid["y"],
-        z=mid["z"],
-        text=mid.index,
-        color=mid["rgba"],
-    )
-
-    f = p[p["floor"]].copy()
     f["count"] = 0
-    import itertools
 
     grid: int = 1
     counts = []
@@ -289,18 +222,153 @@ def main() -> None:
     f.loc[f["count"] > 20, "count"] = 20
     f = f[f["count"] > 2]
 
-    plot_3d(
-        x=f["x"],
-        y=f["y"],
-        z=f["0"],
-        text=f["count"],
-        color=f["count"],
+    return f
+
+
+@timeit
+def get_cubes(
+    p: pd.DataFrame,
+) -> pd.DataFrame:
+    v = p.copy()
+
+    v["count"] = 0
+
+    grid: int = 1
+    counts = pd.DataFrame(
+        data={
+            "x": [],
+            "y": [],
+            "z": [],
+            # "r": [], "g": [], "b": [], "i": [],
+            "c": [],
+        }
     )
+    for x, y, z in itertools.product(
+        np.arange(min(v["x"]), max(v["x"]), grid),
+        np.arange(min(v["y"]), max(v["y"]), grid),
+        np.arange(min(v["z"]), max(v["z"]), grid),
+    ):
+        overscan = 0.0
+        dots = v[
+            (v["x"] >= x - overscan)
+            & (v["x"] < x + 1 + overscan)
+            & (v["y"] >= y - overscan)
+            & (v["y"] < y + 1 + overscan)
+            & (v["z"] >= z - overscan)
+            & (v["z"] < z + 1 + overscan)
+        ]
+        count = len(dots)
+        counts = counts.append({"x": x, "y": y, "z": z, "c": count}, ignore_index=True)
+        #        counts += [count]
+        v.loc[
+            (v["x"] >= x)
+            & (v["x"] < x + 1)
+            & (v["y"] >= y)
+            & (v["y"] < y + 1)
+            & (v["z"] >= z)
+            & (v["z"] < z + 1),
+            "count",
+        ] = count
+        # print(f"{x}, {y}: {count}")
+
+    v.loc[v["count"] > 20, "count"] = 20
+    v = v[v["count"] > 5]
+
+    return v
+
+
+def main() -> None:
+    # Detail size, smaller is more detailed but slower
+    # 1000 is recommended for displaying with Plotly, 300 is the minimum
+    step: int = 3000
+    filename: str = f"data/computed/points_{step}.v2.df.feather"
+
+    try:
+        print(
+            f"Trying to use existing points with step size of {step} from saved points file."
+        )
+        p = pd.read_feather(filename)
+    except FileNotFoundError:
+        print(f"Couldn't get points with step size of {step}, loading raw data.")
+        data, header = load_e57()
+        p: pd.DataFrame = get_points(data, step)
+        p.to_feather(filename)
+    finally:
+        print("p loaded")
+
+    # plot_histograms(p)
+
+    p["0"] = 0
+    p = get_points_with_computed(p)
+
+    # mid = p[~p["roof"] & ~p["floor"]]
+    # mid = p[~p["roof"]]
+    # points = points[(points["z"] >= -1.5) & (points["z"] <= -1.0)]
+    # points["a"] = points.apply(compute_alpha, axis=1)
+
+    # plot_3d(
+    #     x=mid["x"],
+    #     y=mid["y"],
+    #     z=mid["z"],
+    #     text=mid.index,
+    #     color=mid["rgba"],
+    # )
+    #
+    # f = get_squares(p[p["floor"]])
+    #
+    # plot_3d(
+    #     x=f["x"],
+    #     y=f["y"],
+    #     z=f["0"],
+    #     text=f["count"],
+    #     color=f["count"],
+    # )
+
+    v = get_cubes(p[~p["roof"] & ~p["floor"]])
+    v["x2"] = v["x"] + 1
+    v["y2"] = v["y"] + 1
+
+    import uuid
+
+    layers = []
+    for index, row in v.iterrows():
+        layer = {
+            "points": [
+                {"x": row["x"], "y": row["y"], "id": 1},
+                {"x": row["x2"], "y": row["y"], "id": 2},
+                {"x": row["x2"], "y": row["y2"], "id": 3},
+                {"x": row["x"], "y": row["y2"], "id": 4},
+            ],
+            "height": row["z"] + 1.5,  # hardcoded floor level
+            "shape_type": "obstacle",
+            "shapeId": str(uuid.uuid4()),
+        }
+        layers += [layer]
+
+    objects = {
+        "unit": "m",
+        "z_ceil": 4.9,
+        "z_sat": 4.5,
+        "z_marker": 1,
+        "layers": layers,
+        "optimize": True,
+        "marker_grid": 1,
+        "sat_grid": 10,
+    }
+
+    # plot_3d(
+    #     x=v["x"],
+    #     y=v["y"],
+    #     z=v["z"],
+    #     text=v["count"],
+    #     color=v["count"],
+    # )
 
     # TODO: unskew everything
     # TODO: build json
 
-    plot_3d_json()
+    # plot_3d_json()
+    plot_3d_json(objects=objects)
 
 
 if __name__ == "__main__":
