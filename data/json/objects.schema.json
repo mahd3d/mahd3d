@@ -1,0 +1,176 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1602852176.json",
+  "title": "Root",
+  "type": "object",
+  "required": [
+    "unit",
+    "z_ceil",
+    "z_sat",
+    "z_marker",
+    "layers",
+    "optimize",
+    "marker_grid",
+    "sat_grid"
+  ],
+  "properties": {
+    "unit": {
+      "$id": "#root/unit",
+      "title": "Unit",
+      "type": "string",
+      "default": "",
+      "examples": [
+        "m"
+      ],
+      "pattern": "^.*$"
+    },
+    "z_ceil": {
+      "$id": "#root/z_ceil",
+      "title": "Z_ceil",
+      "type": "integer",
+      "examples": [
+        5
+      ],
+      "default": 0
+    },
+    "z_sat": {
+      "$id": "#root/z_sat",
+      "title": "Z_sat",
+      "type": "number",
+      "examples": [
+        4.5
+      ],
+      "default": 0.0
+    },
+    "z_marker": {
+      "$id": "#root/z_marker",
+      "title": "Z_marker",
+      "type": "integer",
+      "examples": [
+        1
+      ],
+      "default": 0
+    },
+    "layers": {
+      "$id": "#root/layers",
+      "title": "Layers",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$id": "#root/layers/items",
+        "title": "Items",
+        "type": "object",
+        "required": [
+          "points",
+          "height",
+          "shape_type",
+          "shapeId"
+        ],
+        "properties": {
+          "points": {
+            "$id": "#root/layers/items/points",
+            "title": "Points",
+            "type": "array",
+            "default": [],
+            "items": {
+              "$id": "#root/layers/items/points/items",
+              "title": "Items",
+              "type": "object",
+              "required": [
+                "x",
+                "y",
+                "id"
+              ],
+              "properties": {
+                "x": {
+                  "$id": "#root/layers/items/points/items/x",
+                  "title": "X",
+                  "type": "number",
+                  "examples": [
+                    0.03
+                  ],
+                  "default": 0.0
+                },
+                "y": {
+                  "$id": "#root/layers/items/points/items/y",
+                  "title": "Y",
+                  "type": "number",
+                  "examples": [
+                    8.61
+                  ],
+                  "default": 0.0
+                },
+                "id": {
+                  "$id": "#root/layers/items/points/items/id",
+                  "title": "Id",
+                  "type": "integer",
+                  "examples": [
+                    1
+                  ],
+                  "default": 0
+                }
+              }
+            }
+          },
+          "height": {
+            "$id": "#root/layers/items/height",
+            "title": "Height",
+            "type": "number",
+            "examples": [
+              2.8
+            ],
+            "default": 0.0
+          },
+          "shape_type": {
+            "$id": "#root/layers/items/shape_type",
+            "title": "Shape_type",
+            "type": "string",
+            "default": "",
+            "examples": [
+              "obstacle"
+            ],
+            "pattern": "^.*$"
+          },
+          "shapeId": {
+            "$id": "#root/layers/items/shapeId",
+            "title": "Shapeid",
+            "type": "string",
+            "default": "",
+            "examples": [
+              "166b0deb-087b-4cad-a102-eaa686067acc"
+            ],
+            "pattern": "^.*$"
+          }
+        }
+      }
+    },
+    "optimize": {
+      "$id": "#root/optimize",
+      "title": "Optimize",
+      "type": "boolean",
+      "examples": [
+        true
+      ],
+      "default": true
+    },
+    "marker_grid": {
+      "$id": "#root/marker_grid",
+      "title": "Marker_grid",
+      "type": "integer",
+      "examples": [
+        1
+      ],
+      "default": 0
+    },
+    "sat_grid": {
+      "$id": "#root/sat_grid",
+      "title": "Sat_grid",
+      "type": "integer",
+      "examples": [
+        10
+      ],
+      "default": 0
+    }
+  }
+}

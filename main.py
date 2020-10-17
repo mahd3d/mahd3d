@@ -4,8 +4,9 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import plotly.graph_objects as go
 import pandas as pd
 import plotly.express as px
-from typing import Union, Optional, Tuple
-from time import time
+from typing import Union, Tuple
+
+from utils import timeit
 
 
 class Line:
@@ -33,18 +34,6 @@ class Sphere:
 
     def equation(s):
         return f"(x-{s.x})²+(y-{s.y})²+(y-{s.y})² = {s.r**2}"
-
-
-def timeit(func):
-    def timed(*args, **kw):
-        start = time()
-        result = func(*args, **kw)
-        end = time()
-        duration = end - start
-        print(f"{func.__name__}() took {duration} seconds")
-        return result
-
-    return timed
 
 
 @timeit
@@ -158,7 +147,7 @@ def plot_3d(
                 text=x.index if text is None else text,
                 mode="markers",
                 marker=dict(
-                    size=8,
+                    size=5,
                     color=z
                     if color is None
                     else color,  # set color to an array/list of desired values
@@ -178,7 +167,45 @@ def plot_3d(
     fig.show()
 
 
+def plot_3d_json() -> None:
+    import json
+    with open("data/json/example.json", "r") as f:
+        data = json.load(f)
+
+    cubes = []
+    for layer_index, layer_value in enumerate(data["layers"]):
+        cubes += [[]]
+        for i, v in enumerate(layer_value["points"]):
+            cubes[layer_index] += [(v["x"], v["y"], 0)]
+            cubes[layer_index] += [(v["x"], v["y"], layer_value["height"])]
+
+    fig = go.Figure(data=[
+        go.Mesh3d(
+            # 8 vertices of a cube
+            x=[i[0] for i in cubes[0]],
+            y=[i[1] for i in cubes[1]],
+            z=[i[2] for i in cubes[2]],
+            colorbar_title='z',
+            colorscale=[[0, 'gold'],
+                        [0.5, 'mediumturquoise'],
+                        [1, 'magenta']],
+            # Intensity of each vertex, which will be interpolated and color-coded
+            intensity=np.linspace(0, 1, 8, endpoint=True),
+            # # i, j and k give the vertices of triangles
+            # i=[7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+            # j=[3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+            # k=[0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+            name='y',
+            showscale=True
+        )
+    ])
+
+    fig.show()
+    pass
+
+
 def main() -> None:
+    #plot_3d_json()
 
     # Detail size, smaller is more detailed but slower
     # 1000 is recommended for displaying with Plotly, 300 is the minimum
