@@ -4,68 +4,13 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import plotly.graph_objects as go
 import pandas as pd
 import plotly.express as px
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional
+import itertools
+import json
+from DataRotation import *
+from LoadE57 import *
 
 from utils import timeit
-
-
-class Line:
-    p1 = (0, 0, 0)
-    x1 = 0
-    y1 = 0
-    z1 = 0
-    p2 = (1, 1, 1)
-    x2 = 0
-    y2 = 0
-    z2 = 0
-    m = (1, 1, 1)
-
-    def equation(s):
-        return f"= f{s.p1} + t {s.p2}"
-
-
-class Sphere:
-    p = (0.5, 0.5, 0.5)
-    x = 0.5
-    y = 0.5
-    z = 0.5
-    r = 0.5
-    d = 1.0
-
-    def equation(s):
-        return f"(x-{s.x})²+(y-{s.y})²+(y-{s.y})² = {s.r**2}"
-
-
-@timeit
-def load_e57(
-    file: str = "data/raw/CustomerCenter1 1.e57",
-) -> Tuple[dict, dict]:
-    """Return a dictionary with the point types as keys."""
-    print(f"Loading e57 file {file}.")
-    e57 = pye57.E57(file)
-
-    # Get and clean-up header
-    raw_header = e57.get_header(0)
-    header = {}
-    for attr in dir(raw_header):
-        if attr[0:1].startswith("_"):
-            continue
-        try:
-            value = getattr(raw_header, attr)
-        except pye57.libe57.E57Exception as e:
-            continue
-        else:
-            header[attr] = value
-
-    header["pos"] = e57.scan_position(0)
-
-    data = e57.read_scan_raw(0)
-    # for key, values in data.items():
-    #     assert isinstance(values, np.ndarray)
-    #     assert len(values) == 151157671
-    #     print(f"len of {key}: {len(values)} ")
-
-    return data, header
 
 
 @timeit
@@ -98,8 +43,6 @@ def get_points_with_computed(
     points.loc[points["z"] > 3.4, ["roof"]] = True
     points["floor"] = False
     points.loc[points["z"] < -1.5, ["floor"]] = True
-    # points["roof"] = points.apply(compute_roof, axis=1)
-    # points["floor"] = points.apply(compute_floor, axis=1)
 
     return points
 
@@ -112,22 +55,14 @@ def compute_rgba(
     return f'rgba({row["r"]}, {row["g"]}, {row["b"]}, {row["a"]:.2f})'
 
 
-def compute_alpha(
-    row,
-) -> float:
-    if row["roof"] or row["floor"]:
-        return 0.3
-    else:
-        return 1.0
-
-
 def plot_histograms(
     points: pd.DataFrame,
-) -> bool:
+) -> None:
     for col in points:
+        if col not in ["x", "y", "z"]:
+            continue
         fig = px.histogram(points, x=col)
         fig.show()
-    return True
 
 
 @timeit
@@ -167,38 +102,51 @@ def plot_3d(
     fig.show()
 
 
-def plot_3d_json() -> None:
-    import json
-    with open("data/json/objects.example.json", "r") as f:
-        data = json.load(f)
+def plot_3d_json(
+    file: str = "data/json/objects.example.json",
+    objects: Optional[dict] = None,
+) -> None:
+    if objects is None:
+        with open(file, "r") as f:
+            data = json.load(f)
+    else:
+        data = objects
 
     cubes: list = []
     for layer_index, layer_value in enumerate(data["layers"]):
         cubes += [[]]
         for i, v in enumerate(layer_value["points"]):
-            cubes[layer_index] += [(v["x"], v["y"], 0.0)]
-            cubes[layer_index] += [(v["x"], v["y"], layer_value["height"])]
+            cubes[layer_index] += [(v["x"], v["y"], 0.1)]
+            cubes[layer_index] += [(v["x"], v["y"], float(layer_value["height"]))]
+            cubes[layer_index].sort(key=lambda _x: (_x[2], _x[1], _x[0]))
+
+    # fixed list, do not change or cubes will look weird
+    i = [0, 3, 4, 7, 0, 6, 1, 7, 0, 5, 2, 7]
+    j = [1, 2, 5, 6, 2, 4, 3, 5, 4, 1, 6, 3]
+    k = [3, 0, 7, 4, 6, 0, 7, 1, 5, 0, 7, 2]
 
     meshes: list = []
-    for cube in cubes[:19]:
+    for index, cube in enumerate(cubes):
+        x = [i_[0] for i_ in cube]
+        y = [i_[1] for i_ in cube]
+        z = [i_[2] for i_ in cube]
+
         meshes += [
             go.Mesh3d(
                 # 8 vertices of a cube
-                x=[i[0] for i in cube],
-                y=[i[1] for i in cube],
-                z=[i[2] for i in cube],
+                x=x,
+                y=y,
+                z=z,
                 # colorbar_title='z',
-                colorscale=[[0, 'gold'],
-                            [0.5, 'mediumturquoise'],
-                            [1, 'magenta']],
+                colorscale=[[0, "gold"], [0.5, "mediumturquoise"], [1, "magenta"]],
                 # Intensity of each vertex, which will be interpolated and color-coded
                 intensity=np.linspace(0, 1, 8, endpoint=True),
-                # # i, j and k give the vertices of triangles
-                # i=[7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
-                # j=[3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
-                # k=[0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
-                name='y',
-                showscale=True
+                # i, j and k give the vertices of triangles
+                i=i,
+                j=j,
+                k=k,
+                name="y",
+                showscale=True,
             )
         ]
 
@@ -207,66 +155,6 @@ def plot_3d_json() -> None:
     fig.show()
     pass
 
-
-def rotate(p, origin=(0, 0), degrees=0):
-    angle = degrees
-    angle = np.deg2rad(degrees)
-    R = np.array([[np.cos(angle), -np.sin(angle)],
-                  [np.sin(angle),  np.cos(angle)]])
-    o = np.atleast_2d(origin)
-    p = np.atleast_2d(p)
-    return np.squeeze((R @ (p.T-o.T) + o.T).T)
-
-def rotateAndAnalyse(p_xy):
-
-    p_xy = rotate(p_xy, degrees = -90) 
-
-    optimalRotation = 0
-    minDistance = (p_xy.max(axis=0)[0] - p_xy.min(axis=0)[0])**2
-
-    for i in range(-180, 180): 
-        p_xy = rotate(p_xy, degrees = 0.5) 
-        
-        currentDistance = (p_xy.max(axis=0)[0] - p_xy.min(axis=0)[0])
-
-        if currentDistance < 0:
-            currentDistance = -currentDistance
-
-        if currentDistance < minDistance:
-            minDistance = currentDistance
-            optimalRotation = i
-
-        #print(optimalRotation * 0.5)
-        #print("")
-
-    # rotate back to the most optimal rotation
-    # we already did 360 rotations, go back 360-optimal number of rotations
-    #return rotate(p_xy, degrees = - 0.5 * (360 - optimalRotation))
-
-    return (0.5 * optimalRotation)
-
-
-def correctlyRotateDataFrame(f):
-
-    # PART 1: figure out the optimal rotation in XY plane
-    f_xy = f[['x', 'y']].copy()
-
-    # this gives the rotation to minimize the x interval
-    optimal_xy_rotation = rotateAndAnalyse(f_xy)
-    #print(optimal_xy_rotation)
-
-    # PART 2: rotate dataframe in XY plane
-    f[['x','y']] = rotate(f_xy, degrees=optimal_xy_rotation)
-
-
-    # PART 3: do the same in ZY axis
-    # to minimize the skewness of the floor you need to rotate in Z,Y (order is important for the function), as it minimizes the 1st parameter and we need to minize the height
-    f_zy = f[['z', 'y']].copy()
-    #print(p_zy.head())
-    optimal_zy_rotation = rotateAndAnalyse(f_zy)
-    f[['z','y']] = rotate(f_zy, degrees=optimal_zy_rotation)
-
-    return f
 
 
 
@@ -288,30 +176,22 @@ def main() -> None:
         p.to_feather(filename)
     finally:
         print("p loaded")
+    # tight layout
+    fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
 
-    # plot_histograms(p)
+    # proportional aspect ratio with data, alternatively cube or manual (see below)
+    fig.update_layout(scene_aspectmode="data")
 
-    p["0"] = 0
-    p = get_points_with_computed(p)
+    fig.show()
+    pass
 
-    # p = p[~p["roof"] & ~p["floor"]]
-    p = p[~p["roof"]]
-    # points = points[(points["z"] >= -1.5) & (points["z"] <= -1.0)]
-    # points["a"] = points.apply(compute_alpha, axis=1)
 
-    p = correctlyRotateDataFrame(p)
+def get_squares(
+    p: pd.DataFrame,
+) -> pd.DataFrame:
+    f = correctlyRotateDataFrame(p.copy())
 
-    plot_3d(
-        x=p["x"],
-        y=p["y"],
-        z=p["z"],
-        text=p.index,
-        color=p["rgba"],
-    )
-
-    f = p[p["floor"]].copy()
     f["count"] = 0
-    import itertools
 
     grid: int = 1
     counts = []
@@ -336,19 +216,153 @@ def main() -> None:
     f.loc[f["count"] > 20, "count"] = 20
     f = f[f["count"] > 2]
 
-    f = correctlyRotateDataFrame(f)
+    return f
 
-    plot_3d(
-        x=f["x"],
-        y=f["y"],
-        z=f["0"],
-        text=f["count"],
-        color=f["count"],
+
+@timeit
+def get_cubes(
+    p: pd.DataFrame,
+) -> pd.DataFrame:
+    v = correctlyRotateDataFrame(p.copy())
+
+    v["count"] = 0
+
+    grid: int = 1
+    counts = pd.DataFrame(
+        data={
+            "x": [],
+            "y": [],
+            "z": [],
+            # "r": [], "g": [], "b": [], "i": [],
+            "c": [],
+        }
     )
+    for x, y, z in itertools.product(
+        np.arange(min(v["x"]), max(v["x"]), grid),
+        np.arange(min(v["y"]), max(v["y"]), grid),
+        np.arange(min(v["z"]), max(v["z"]), grid),
+    ):
+        overscan = 0.0
+        dots = v[
+            (v["x"] >= x - overscan)
+            & (v["x"] < x + 1 + overscan)
+            & (v["y"] >= y - overscan)
+            & (v["y"] < y + 1 + overscan)
+            & (v["z"] >= z - overscan)
+            & (v["z"] < z + 1 + overscan)
+        ]
+        count = len(dots)
+        counts = counts.append({"x": x, "y": y, "z": z, "c": count}, ignore_index=True)
+        #        counts += [count]
+        v.loc[
+            (v["x"] >= x)
+            & (v["x"] < x + 1)
+            & (v["y"] >= y)
+            & (v["y"] < y + 1)
+            & (v["z"] >= z)
+            & (v["z"] < z + 1),
+            "count",
+        ] = count
+        # print(f"{x}, {y}: {count}")
 
+    v.loc[v["count"] > 20, "count"] = 20
+    v = v[v["count"] > 5]
+
+    return v
+
+
+def main() -> None:
+    # Detail size, smaller is more detailed but slower
+    # 1000 is recommended for displaying with Plotly, 300 is the minimum
+    step: int = 3000
+    filename: str = f"data/computed/points_{step}.v2.df.feather"
+
+    try:
+        print(
+            f"Trying to use existing points with step size of {step} from saved points file."
+        )
+        p = pd.read_feather(filename)
+    except FileNotFoundError:
+        print(f"Couldn't get points with step size of {step}, loading raw data.")
+        data, header = load_e57()
+        p: pd.DataFrame = get_points(data, step)
+        p.to_feather(filename)
+    finally:
+        print("p loaded")
+
+    # plot_histograms(p)
+
+    p["0"] = 0
+    p = get_points_with_computed(p)
+
+    # mid = p[~p["roof"] & ~p["floor"]]
+    # mid = p[~p["roof"]]
+    # points = points[(points["z"] >= -1.5) & (points["z"] <= -1.0)]
+    # points["a"] = points.apply(compute_alpha, axis=1)
+
+    # plot_3d(
+    #     x=mid["x"],
+    #     y=mid["y"],
+    #     z=mid["z"],
+    #     text=mid.index,
+    #     color=mid["rgba"],
+    # )
+    #
+    # f = get_squares(p[p["floor"]])
+    #
+    # plot_3d(
+    #     x=f["x"],
+    #     y=f["y"],
+    #     z=f["0"],
+    #     text=f["count"],
+    #     color=f["count"],
+    # )
+
+    v = get_cubes(p[~p["roof"] & ~p["floor"]])
+    v["x2"] = v["x"] + 1
+    v["y2"] = v["y"] + 1
+
+    import uuid
+
+    layers = []
+    for index, row in v.iterrows():
+        layer = {
+            "points": [
+                {"x": row["x"], "y": row["y"], "id": 1},
+                {"x": row["x2"], "y": row["y"], "id": 2},
+                {"x": row["x2"], "y": row["y2"], "id": 3},
+                {"x": row["x"], "y": row["y2"], "id": 4},
+            ],
+            "height": row["z"] + 1.5,  # hardcoded floor level
+            "shape_type": "obstacle",
+            "shapeId": str(uuid.uuid4()),
+        }
+        layers += [layer]
+
+    objects = {
+        "unit": "m",
+        "z_ceil": 4.9,
+        "z_sat": 4.5,
+        "z_marker": 1,
+        "layers": layers,
+        "optimize": True,
+        "marker_grid": 1,
+        "sat_grid": 10,
+    }
+
+    # plot_3d(
+    #     x=v["x"],
+    #     y=v["y"],
+    #     z=v["z"],
+    #     text=v["count"],
+    #     color=v["count"],
+    # )
+
+    # TODO: unskew everything
     # TODO: build json
 
-    plot_3d_json()
+    # plot_3d_json()
+    plot_3d_json(objects=objects)
 
 
 if __name__ == "__main__":
