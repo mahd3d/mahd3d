@@ -4,9 +4,7 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import plotly.graph_objects as go
 import pandas as pd
 import plotly.express as px
-# import pickle
 from typing import Union, Optional
-# from typecheck import typecheck as typed
 
 
 class Line:
@@ -36,7 +34,6 @@ class Sphere:
         return f"(x-{s.x})²+(y-{s.y})²+(y-{s.y})² = {s.r**2}"
 
 
-
 def load_e57(file: str = "data/raw/CustomerCenter1 1.e57") -> dict:
     """Return a dictionary with the point types as keys."""
     print(f"Loading e57 file {file}.")
@@ -51,7 +48,6 @@ def load_e57(file: str = "data/raw/CustomerCenter1 1.e57") -> dict:
 
 
 def get_points(data: dict, step: int = 1000) -> pd.DataFrame:
-
     x = data["cartesianX"][::step]
     y = data["cartesianY"][::step]
     z = data["cartesianZ"][::step]
@@ -87,10 +83,6 @@ def compute_rgba_from_count(row) -> str:
 
 def compute_roof(row) -> bool:
     return row["z"] > 3.4
-    # if row["z"] > 5:
-    #     row["r"] = 255
-    #     row["g"] = 255
-    #     row["b"] = 255
 
 
 def compute_floor(row) -> bool:
@@ -154,11 +146,11 @@ def main() -> None:
         # p.to_pickle(f"data/computed/points_{step}.df.pickle")
         # p.to_hdf(f"data/computed/points_{step}.df.hdf", "df")
         # p.to_parquet(f"data/computed/points_{step}.df.parquet")
-        # p.to_feather(f"data/computed/points_{step}.df.feather")
+        p.to_feather(f"data/computed/points_{step}.df.feather")
     finally:
         print("p loaded")
 
-    # plot_histograms(p)
+    plot_histograms(p)
 
     p["0"] = 0
     p = get_points_with_computed(p)
