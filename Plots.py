@@ -1,14 +1,13 @@
-import numpy as np
-
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
-import plotly.graph_objects as go
-import pandas as pd
-import plotly.express as px
-from typing import Union, Tuple, Optional
-
 import json
+from typing import Union, Optional
+
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 
 from utils import timeit
+
 
 @timeit
 def plot_3d(
@@ -61,7 +60,7 @@ def plot_3d_json(
     for layer_index, layer_value in enumerate(data["layers"]):
         cubes += [[]]
         for i, v in enumerate(layer_value["points"]):
-            cubes[layer_index] += [(v["x"], v["y"], 0.1)]
+            cubes[layer_index] += [(v["x"], v["y"], 0.0)]
             cubes[layer_index] += [(v["x"], v["y"], float(layer_value["height"]))]
             cubes[layer_index].sort(key=lambda _x: (_x[2], _x[1], _x[0]))
 
@@ -82,8 +81,9 @@ def plot_3d_json(
                 x=x,
                 y=y,
                 z=z,
+                color="rgb(255,0,0)",
                 # colorbar_title='z',
-                colorscale=[[0, "gold"], [0.5, "mediumturquoise"], [1, "magenta"]],
+                # colorscale=[[0, "gold"], [0.5, "mediumturquoise"], [1, "magenta"]],
                 # Intensity of each vertex, which will be interpolated and color-coded
                 intensity=np.linspace(0, 1, 8, endpoint=True),
                 # i, j and k give the vertices of triangles
@@ -96,6 +96,12 @@ def plot_3d_json(
         ]
 
     fig = go.Figure(data=meshes)
+
+    # tight layout
+    fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
+
+    # proportional aspect ratio with data, alternatively cube or manual (see below)
+    fig.update_layout(scene_aspectmode="data")
 
     fig.show()
     pass

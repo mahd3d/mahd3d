@@ -106,18 +106,20 @@ def get_squares(
 @timeit
 def get_cubes(
     p: pd.DataFrame,
+    grid: float = 1.0,
 ) -> pd.DataFrame:
     v = correctlyRotateDataFrame(p.copy())
 
     v["count"] = 0
 
-    grid: float = 1.0
     counts = pd.DataFrame(
         data={
             "x": [],
             "y": [],
             "z": [],
-            # "r": [], "g": [], "b": [], "i": [],
+            "r": [],
+            "g": [],
+            "b": [],
             "c": [],
         }
     )
@@ -129,22 +131,33 @@ def get_cubes(
         overscan = 0.0
         dots = v[
             (v["x"] >= x - overscan)
-            & (v["x"] < x + 1 + overscan)
+            & (v["x"] < x + grid + overscan)
             & (v["y"] >= y - overscan)
-            & (v["y"] < y + 1 + overscan)
+            & (v["y"] < y + grid + overscan)
             & (v["z"] >= z - overscan)
-            & (v["z"] < z + 1 + overscan)
+            & (v["z"] < z + grid + overscan)
         ]
         count = len(dots)
-        counts = counts.append({"x": x, "y": y, "z": z, "c": count}, ignore_index=True)
+        counts = counts.append(
+            {
+                "x": x,
+                "y": y,
+                "z": z,
+                "r": dots["r"].mean(),
+                "g": dots["g"].mean(),
+                "b": dots["b"].mean(),
+                "c": count,
+            },
+            ignore_index=True,
+        )
         #        counts += [count]
         v.loc[
             (v["x"] >= x)
-            & (v["x"] < x + 1)
+            & (v["x"] < x + grid)
             & (v["y"] >= y)
-            & (v["y"] < y + 1)
+            & (v["y"] < y + grid)
             & (v["z"] >= z)
-            & (v["z"] < z + 1),
+            & (v["z"] < z + grid),
             "count",
         ] = count
         # print(f"{x}, {y}: {count}")
@@ -179,18 +192,18 @@ def main() -> None:
     p["0"] = 0
     p = get_points_with_computed(p)
 
-    # mid = p[~p["roof"] & ~p["floor"]]
+    mid = p[~p["roof"] & ~p["floor"]]
     # mid = p[~p["roof"]]
     # points = points[(points["z"] >= -1.5) & (points["z"] <= -1.0)]
     # points["a"] = points.apply(compute_alpha, axis=1)
 
-    # plot_3d(
-    #     x=mid["x"],
-    #     y=mid["y"],
-    #     z=mid["z"],
-    #     text=mid.index,
-    #     color=mid["rgba"],
-    # )
+    plot_3d(
+        x=mid["x"],
+        y=mid["y"],
+        z=mid["z"],
+        text=mid.index,
+        color=mid["rgba"],
+    )
     #
     # f = get_squares(p[p["floor"]])
     #
@@ -202,7 +215,9 @@ def main() -> None:
     #     color=f["count"],
     # )
 
-    v = get_cubes(p[~p["roof"] & ~p["floor"]])
+    grid: float = 1.0
+
+    v = get_cubes(p[~p["roof"] & ~p["floor"]], grid)
     v = v[v["c"] > 5]
 
     layers = []
@@ -210,11 +225,11 @@ def main() -> None:
         layer = {
             "points": [
                 {"x": row["x"], "y": row["y"], "id": 1},
-                {"x": row["x"]+1, "y": row["y"], "id": 2},
-                {"x": row["x"]+1, "y": row["y"]+1, "id": 3},
-                {"x": row["x"], "y": row["y"]+1, "id": 4},
+                {"x": row["x"] + grid, "y": row["y"], "id": 2},
+                {"x": row["x"] + grid, "y": row["y"] + grid, "id": 3},
+                {"x": row["x"], "y": row["y"] + grid, "id": 4},
             ],
-            "height": row["z"] + 2.4995,  # hardcoded floor level
+            "height": row["z"] + 2.4995,  # hardcoded floor level, not adjusted for tilt
             "shape_type": "obstacle",
             "shapeId": str(uuid.uuid4()),
         }
