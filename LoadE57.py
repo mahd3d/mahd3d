@@ -1,6 +1,6 @@
 import pye57
-from typing import Union, Tuple, Optional
-from utils import timeit
+from typing import Tuple
+from src.utils import timeit
 
 @timeit
 def load_e57(

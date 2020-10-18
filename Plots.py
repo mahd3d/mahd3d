@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 from plotly import express as px
 
-from utils import timeit
+from src.utils import timeit
 
 
 @timeit
@@ -192,7 +192,7 @@ def plot_3d_Grouped_json(
     selectedTallCubes: list = []
 
     for tallCube in enumerate(groupedCubes):
-        
+
         if(tallCube[1][4][2] >= minimumHeight):
             selectedTallCubes.append(tallCube[1])
 
@@ -200,7 +200,7 @@ def plot_3d_Grouped_json(
     # START COMBINE THE BUILDINGS
     # for now just create rectangles (otherwise we could also go for polygons, but that would break the curreny flow on the website)
 
-    # 
+    #
 
 
     # END COMBINE THE BUILDINGS
