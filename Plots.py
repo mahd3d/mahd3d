@@ -3,6 +3,7 @@ from typing import Union, Optional
 
 import numpy as np
 import pandas as pd
+import math
 import plotly.graph_objects as go
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 
@@ -111,6 +112,11 @@ def plot_3d_Grouped_json(
     file: str = "data/json/objects.example.json",
     objects: Optional[dict] = None,
     cubeEdgeLength: Optional[int] = 1,
+    global_minX: Optional[int] = 0,
+    global_maxX: Optional[int] = 20,
+    global_minY: Optional[int] = -20,
+    global_maxY: Optional[int] = 50,
+
 ) -> None:
     if objects is None:
         with open(file, "r") as f:
@@ -128,10 +134,16 @@ def plot_3d_Grouped_json(
 
     ################################################################################
     # START COMBINE THE CUBES
+
+    # find the smallest x,y and the biggest x,y
+
+    #rangeX = global_maxX - global_minX
+    #rangeY = global_maxY - global_minY
+
     groupedCubes: list = []
 
-    for xi in range (20):
-        for yi in range (-20, 50):
+    for xi in range (math.floor(global_minX / cubeEdgeLength), math.ceil(global_maxX / cubeEdgeLength)):       # math.floor(global_minX)
+        for yi in range (math.floor(global_minY / cubeEdgeLength), math.ceil(global_maxY / cubeEdgeLength)):
             square: list = []
 
             # iterate over all cubes and group them vertically
@@ -140,7 +152,7 @@ def plot_3d_Grouped_json(
                 xj = cube[1][0][0]
                 yj = cube[1][0][1]    
 
-                if(((xj > xi) & (xj < xi + cubeEdgeLength)) & ((yj > yi) & (yj < yi + cubeEdgeLength))):
+                if(((xj >= (xi * cubeEdgeLength)) & (xj < ((xi + 1) * cubeEdgeLength))) & ((yj >= (yi * cubeEdgeLength)) & (yj < ((yi + 1) * cubeEdgeLength)))):
                     square += [cube[1]]   # drop the index, just take the data
 
             if(len(square) != 0):
