@@ -13,7 +13,7 @@ import itertools
 import json
 from DataRotation import correctlyRotateDataFrame, rotate
 from LoadE57 import load_e57
-from Plots import plot_3d, plot_3d_json
+from Plots import plot_3d, plot_3d_json, plot_3d_Grouped_json
 
 from utils import timeit
 
@@ -261,7 +261,8 @@ def main() -> None:
     # TODO: build json
 
     # plot_3d_json()
-    plot_3d_json(objects=objects)
+
+    plot_3d_Grouped_json(objects=objects)
 
 
 if __name__ == "__main__":
