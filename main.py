@@ -11,6 +11,10 @@ from Plots import plot_3d, plot_3d_Grouped_json
 
 from utils import timeit
 
+global_minX = 0
+global_maxX = 0
+global_minY = 0
+global_maxY = 0
 
 @timeit
 def get_points(
@@ -107,6 +111,16 @@ def get_cubes(
             "c": [],
         }
     )
+
+    global global_min
+    global global_maxX
+    global global_minY
+    global global_maxY
+    global_minX = min(v['x'])
+    global_maxX = max(v['x'])
+    global_minY = min(v['y'])
+    global_maxY = max(v['y'])
+
     for x, y, z in itertools.product(
         np.arange(min(v["x"]), max(v["x"]), grid),
         np.arange(min(v["y"]), max(v["y"]), grid),
@@ -157,6 +171,7 @@ def main() -> None:
     # 1000 is recommended for displaying with Plotly, 300 is the minimum
     step: int = 3000
     filename: str = f"data/computed/points_{step}.v2.df.feather"
+    minimumHeightOfObstacle: float = 1.2
 
     try:
         print(
@@ -267,7 +282,7 @@ def main() -> None:
 
     # plot_3d_json()
 
-    plot_3d_Grouped_json(objects=objects)
+    plot_3d_Grouped_json(objects=objects, global_maxX=global_maxX, global_minX=global_minX, global_maxY=global_maxY, global_minY=global_minY, minimumHeight=minimumHeightOfObstacle)
 
 
 if __name__ == "__main__":

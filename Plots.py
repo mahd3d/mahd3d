@@ -3,6 +3,7 @@ from typing import Union, Optional
 
 import numpy as np
 import pandas as pd
+import math
 import plotly.graph_objects as go
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 from plotly import express as px
@@ -110,6 +111,13 @@ def plot_3d_json(
 def plot_3d_Grouped_json(
     file: str = "data/json/objects.example.json",
     objects: Optional[dict] = None,
+    cubeEdgeLength: Optional[int] = 1,
+    global_minX: Optional[int] = 0,
+    global_maxX: Optional[int] = 20,
+    global_minY: Optional[int] = -20,
+    global_maxY: Optional[int] = 50,
+    minimumHeight: Optional[float] = 1.2
+
 ) -> None:
     if objects is None:
         with open(file, "r") as f:
@@ -125,11 +133,13 @@ def plot_3d_Grouped_json(
             cubes[layer_index] += [(v["x"], v["y"], float(layer_value["height"]))]
             cubes[layer_index].sort(key=lambda _x: (_x[2], _x[1], _x[0]))
 
-    #COMBINE THE CUBES
+    ################################################################################
+    # START COMBINE THE CUBES
+
     groupedCubes: list = []
 
-    for xi in range (20):
-        for yi in range (-20, 50):
+    for xi in range (math.floor(global_minX / cubeEdgeLength), math.ceil(global_maxX / cubeEdgeLength)):       # math.floor(global_minX)
+        for yi in range (math.floor(global_minY / cubeEdgeLength), math.ceil(global_maxY / cubeEdgeLength)):
             square: list = []
 
             # iterate over all cubes and group them vertically
@@ -138,7 +148,7 @@ def plot_3d_Grouped_json(
                 xj = cube[1][0][0]
                 yj = cube[1][0][1]
 
-                if(((xj > xi) & (xj < xi + 1)) & ((yj > yi) & (yj < yi + 1))):
+                if(((xj >= (xi * cubeEdgeLength)) & (xj < ((xi + 1) * cubeEdgeLength))) & ((yj >= (yi * cubeEdgeLength)) & (yj < ((yi + 1) * cubeEdgeLength)))):
                     square += [cube[1]]   # drop the index, just take the data
 
             if(len(square) != 0):
@@ -173,13 +183,36 @@ def plot_3d_Grouped_json(
 
     print("groupedCubes finished...")
 
+    # END COMBINE THE CUBES
+    ################################################################################
+    # remove all vertical boxes that are not high enough (smaller than the minimal limit)
+
+    minimumHeight = 1.2
+
+    selectedTallCubes: list = []
+
+    for tallCube in enumerate(groupedCubes):
+        
+        if(tallCube[1][4][2] >= minimumHeight):
+            selectedTallCubes.append(tallCube[1])
+
+    ################################################################################
+    # START COMBINE THE BUILDINGS
+    # for now just create rectangles (otherwise we could also go for polygons, but that would break the curreny flow on the website)
+
+    # 
+
+
+    # END COMBINE THE BUILDINGS
+    ################################################################################
+
     # fixed list, do not change or cubes will look weird
     i = [0, 3, 4, 7, 0, 6, 1, 7, 0, 5, 2, 7]
     j = [1, 2, 5, 6, 2, 4, 3, 5, 4, 1, 6, 3]
     k = [3, 0, 7, 4, 6, 0, 7, 1, 5, 0, 7, 2]
 
     meshes: list = []
-    for index, cube in enumerate(groupedCubes):
+    for index, cube in enumerate(selectedTallCubes):
         x = [i_[0] for i_ in cube]
         y = [i_[1] for i_ in cube]
         z = [i_[2] for i_ in cube]

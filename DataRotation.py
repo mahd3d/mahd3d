@@ -54,9 +54,9 @@ def correctlyRotateDataFrame(f):
 
     # PART 3: do the same in ZY axis
     # to minimize the skewness of the floor you need to rotate in Z,Y (order is important for the function), as it minimizes the 1st parameter and we need to minize the height
-    f_zy = f[['z', 'y']].copy()
+    #f_zy = f[['z', 'y']].copy()
     #print(p_zy.head())
-    optimal_zy_rotation = rotateAndAnalyse(f_zy)
-    f[['z','y']] = rotate(f_zy, degrees=optimal_zy_rotation)
+    #optimal_zy_rotation = rotateAndAnalyse(f_zy)
+    #f[['z','y']] = rotate(f_zy, degrees=optimal_zy_rotation)
 
     return f
