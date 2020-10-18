@@ -199,7 +199,7 @@ def main() -> None:
     #     color=f["count"],
     # )
 
-    grid: float = 5.0
+    grid: float = 1.0
 
     v = get_cubes(p[~p["roof"] & ~p["floor"]], grid)
     v = v[v["c"] > 5]
@@ -221,11 +221,11 @@ def main() -> None:
         }
         layers += [layer]
         shape = {
-            "userInput":    row["z"],
-            "x":            row["x"],
-            "y":            row["y"],
-            "width":        grid*10,
-            "height":       grid*10,
+            "userInput":    round(row["z"]*10)/10 + 2.4995,
+            "x":            row["x"]*20,
+            "y":            row["y"]*20,
+            "width":        grid*20,
+            "height":       grid*20,
             "rotation":     0,
             "sId":          shape_id,
             "sType":        "Rect",
