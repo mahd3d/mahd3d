@@ -236,11 +236,11 @@ def main() -> None:
         }
         layers += [layer]
         shape = {
-            "userInput":    round(row["z"]*10)/10 + 2.4995,
-            "x":            row["x"]*20,
-            "y":            row["y"]*20,
-            "width":        grid*20,
-            "height":       grid*20,
+            "userInput":    round((row["z"] + 2.4995)),
+            "x":            row["x"]*10,
+            "y":            row["y"]*10,
+            "width":        grid*10,
+            "height":       grid*10,
             "rotation":     0,
             "sId":          shape_id,
             "sType":        "Rect",
