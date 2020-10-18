@@ -116,6 +116,7 @@ def plot_3d_Grouped_json(
     global_maxX: Optional[int] = 20,
     global_minY: Optional[int] = -20,
     global_maxY: Optional[int] = 50,
+    minimumHeight: Optional[float] = 1.2
 
 ) -> None:
     if objects is None:
@@ -134,11 +135,6 @@ def plot_3d_Grouped_json(
 
     ################################################################################
     # START COMBINE THE CUBES
-
-    # find the smallest x,y and the biggest x,y
-
-    #rangeX = global_maxX - global_minX
-    #rangeY = global_maxY - global_minY
 
     groupedCubes: list = []
 
@@ -189,10 +185,23 @@ def plot_3d_Grouped_json(
 
     # END COMBINE THE CUBES
     ################################################################################
+    # remove all vertical boxes that are not high enough (smaller than the minimal limit)
+
+    minimumHeight = 1.2
+
+    selectedTallCubes: list = []
+
+    for tallCube in enumerate(groupedCubes):
+        
+        if(tallCube[1][4][2] >= minimumHeight):
+            selectedTallCubes.append(tallCube[1])
 
     ################################################################################
     # START COMBINE THE BUILDINGS
-    # not sure if we can draw this? but maybe we don't need to... just place it into .json file as an n-gon
+    # for now just create rectangles (otherwise we could also go for polygons, but that would break the curreny flow on the website)
+
+    # 
+
 
     # END COMBINE THE BUILDINGS
     ################################################################################
@@ -203,7 +212,7 @@ def plot_3d_Grouped_json(
     k = [3, 0, 7, 4, 6, 0, 7, 1, 5, 0, 7, 2]
 
     meshes: list = []
-    for index, cube in enumerate(groupedCubes):
+    for index, cube in enumerate(selectedTallCubes):
         x = [i_[0] for i_ in cube]
         y = [i_[1] for i_ in cube]
         z = [i_[2] for i_ in cube]

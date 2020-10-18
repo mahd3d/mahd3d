@@ -187,6 +187,7 @@ def main() -> None:
     # 1000 is recommended for displaying with Plotly, 300 is the minimum
     step: int = 3000
     filename: str = f"data/computed/points_{step}.v2.df.feather"
+    minimumHeightOfObstacle: float = 1.2
 
     try:
         print(
@@ -276,7 +277,7 @@ def main() -> None:
 
     # plot_3d_json()
 
-    plot_3d_Grouped_json(objects=objects, global_maxX=global_maxX, global_minX=global_minX, global_maxY=global_maxY, global_minY=global_minY)
+    plot_3d_Grouped_json(objects=objects, global_maxX=global_maxX, global_minX=global_minX, global_maxY=global_maxY, global_minY=global_minY, minimumHeight=minimumHeightOfObstacle)
 
 
 if __name__ == "__main__":
