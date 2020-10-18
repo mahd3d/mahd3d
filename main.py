@@ -237,7 +237,7 @@ def main() -> None:
 
     objects = {
         "unit": "m",
-        "z_ceil": 4.9,
+        "z_ceil": 5,
         "z_sat": 4.5,
         "z_marker": 1,
         "layers": layers,
