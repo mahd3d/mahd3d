@@ -256,9 +256,13 @@ def main() -> None:
         all_shapes += [shape]
 
     ################################################################################
+    # VERTICAL MERGE
+    ################################################################################
     # go over layes and shapes, remove all non-top layers and shapes
-
+    # also have a minimum high under which we don't consider an object to be an obstacle
+    
     cubeEdgeLength = 1
+    minimumHeight = 1.2 * cubeEdgeLength
     layersRefined = []
 
     for xi in range (math.floor(global_minX / cubeEdgeLength), math.ceil(global_maxX / cubeEdgeLength)):       # math.floor(global_minX)
@@ -269,8 +273,9 @@ def main() -> None:
 
                 xj = layer['points'][0]['x']
                 yj = layer['points'][0]['y']
+                hj = layer['height']
 
-                if(((xj >= (xi * cubeEdgeLength)) & (xj < ((xi + 1) * cubeEdgeLength))) & ((yj >= (yi * cubeEdgeLength)) & (yj < ((yi + 1) * cubeEdgeLength)))):
+                if(((xj >= (xi * cubeEdgeLength)) & (xj < ((xi + 1) * cubeEdgeLength))) & ((yj >= (yi * cubeEdgeLength)) & (yj < ((yi + 1) * cubeEdgeLength))) & (hj >= minimumHeight)):
                     layersTemp += [layer]  
 
             if(len(layersTemp) != 0):
@@ -306,18 +311,20 @@ def main() -> None:
 
                 all_shapesRefined.append(shapeTemp)
 
-        #print("")
-        #print(shape)
-        #print(all_shapesRefined[0])     
-        #print("")   
+    ################################################################################
+    # HORIZONTAL MERGE
+    ################################################################################
+
+    #    layersMerged = []
+
+    #    for xi in range (math.floor(global_minX / cubeEdgeLength), math.ceil(global_maxX / cubeEdgeLength)):       # math.floor(global_minX)
+    #        for yi in range (math.floor(global_minY / cubeEdgeLength), math.ceil(global_maxY / cubeEdgeLength)):
+    #            layersTemp : list = []
+
 
     ################################################################################
 
-
-
     objects = {
-        #"allShapes": all_shapes,
-        #"layers": layers,
         "allShapes": all_shapesRefined,
         "layers": layersRefined,
         "scale": {
@@ -345,8 +352,6 @@ def main() -> None:
     # )
 
     plot_3d_json(objects=objects)
-
-#    plot_3d_Grouped_json(objects=objects, global_maxX=global_maxX, global_minX=global_minX, global_maxY=global_maxY, global_minY=global_minY, minimumHeight=minimumHeightOfObstacle)
 
 
 if __name__ == "__main__":
