@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
+from plotly import express as px
 
 from utils import timeit
 
@@ -104,7 +105,6 @@ def plot_3d_json(
     fig.update_layout(scene_aspectmode="data")
 
     fig.show()
-    pass
 
 
 def plot_3d_Grouped_json(
@@ -136,7 +136,7 @@ def plot_3d_Grouped_json(
             for cube in enumerate(cubes):
 
                 xj = cube[1][0][0]
-                yj = cube[1][0][1]    
+                yj = cube[1][0][1]
 
                 if(((xj > xi) & (xj < xi + 1)) & ((yj > yi) & (yj < yi + 1))):
                     square += [cube[1]]   # drop the index, just take the data
@@ -159,18 +159,18 @@ def plot_3d_Grouped_json(
                 newCube = list(s[1].copy())
 
                 for k_ in range(4):
-                    lst = list(newCube[k_])                   
+                    lst = list(newCube[k_])
                     lst[2] = minZ
                     newCube[k_] = tuple(lst)
 
                 for k__ in range(4,8):
 
-                    lst = list(newCube[k__])                   
+                    lst = list(newCube[k__])
                     lst[2] = maxZ
                     newCube[k__] = tuple(lst)
-                        
+
                 groupedCubes.append(newCube)
-            
+
     print("groupedCubes finished...")
 
     # fixed list, do not change or cubes will look weird
@@ -205,5 +205,17 @@ def plot_3d_Grouped_json(
 
     fig = go.Figure(data=meshes)
 
+    # proportional aspect ratio with data, alternatively cube or manual (see below)
+    fig.update_layout(scene_aspectmode="data")
+
     fig.show()
-    pass
+
+
+def plot_histograms(
+    points: pd.DataFrame,
+) -> None:
+    for col in points:
+        if col not in ["x", "y", "z"]:
+            continue
+        fig = px.histogram(points, x=col)
+        fig.show()

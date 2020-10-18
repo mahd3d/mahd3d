@@ -1,19 +1,13 @@
-import itertools
-import json
 import uuid
-from typing import Union, Tuple, Optional
 
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
-import plotly.graph_objects as go
 import pandas as pd
-import plotly.express as px
-from typing import Union, Tuple, Optional
 import itertools
 import json
-from DataRotation import correctlyRotateDataFrame, rotate
+from DataRotation import correctlyRotateDataFrame
 from LoadE57 import load_e57
-from Plots import plot_3d, plot_3d_json, plot_3d_Grouped_json
+from Plots import plot_3d, plot_3d_Grouped_json
 
 from utils import timeit
 
@@ -58,16 +52,6 @@ def compute_rgba(
     if "a" not in row:
         row["a"] = 1.0
     return f'rgba({row["r"]}, {row["g"]}, {row["b"]}, {row["a"]:.2f})'
-
-
-def plot_histograms(
-    points: pd.DataFrame,
-) -> None:
-    for col in points:
-        if col not in ["x", "y", "z"]:
-            continue
-        fig = px.histogram(points, x=col)
-        fig.show()
 
 
 def get_squares(
@@ -215,13 +199,15 @@ def main() -> None:
     #     color=f["count"],
     # )
 
-    grid: float = 1.0
+    grid: float = 5.0
 
     v = get_cubes(p[~p["roof"] & ~p["floor"]], grid)
     v = v[v["c"] > 5]
 
     layers = []
+    all_shapes = []
     for index, row in v.iterrows():
+        shape_id = str(uuid.uuid4())
         layer = {
             "points": [
                 {"x": row["x"], "y": row["y"], "id": 1},
@@ -231,23 +217,45 @@ def main() -> None:
             ],
             "height": row["z"] + 2.4995,  # hardcoded floor level, not adjusted for tilt
             "shape_type": "obstacle",
-            "shapeId": str(uuid.uuid4()),
+            "shapeId": shape_id,
         }
         layers += [layer]
+        shape = {
+            "userInput":    row["z"],
+            "x":            row["x"],
+            "y":            row["y"],
+            "width":        grid*10,
+            "height":       grid*10,
+            "rotation":     0,
+            "sId":          shape_id,
+            "sType":        "Rect",
+            "obstacleType": "obstacle",
+            "stroke":       "red",
+            "strokeWidth":  1,
+            "cursor":       "pointer",
+            "fill":         "#808080",
+            "opacity":      0.6
+        }
+        all_shapes += [shape]
 
     objects = {
-        "unit": "m",
-        "z_ceil": 5,
-        "z_sat": 4.5,
-        "z_marker": 1,
+        "allShapes": all_shapes,
         "layers": layers,
-        "optimize": True,
-        "marker_grid": 1,
-        "sat_grid": 10,
+        "scale": {
+            "convertVal": 1.0,
+            "unit":       "m"
+        },
+        "ratio": 1.0,
+        "img": """data:image/gif;base64,R0lGODdhEAAQAMwAAPj7+FmhUYjNfGuxYYDJdYTIeanOpT+DOTuANXi/bGOrWj6CONzv2sPjv2CmV1unU4zPgISg6DJnJ3ImTh8Mtbs00aNP1CZSGy0YqLEn47RgXW8amasW7XWsmmvX2iuXiwAAAAAEAAQAAAFVyAgjmRpnihqGCkpDQPbGkNUOFk6DZqgHCNGg2T4QAQBoIiRSAwBE4VA4FACKgkB5NGReASFZEmxsQ0whPDi9BiACYQAInXhwOUtgCUQoORFCGt/g4QAIQA7"""
     }
 
+    with open("data/json/objects2.example.json") as f:
+        example = json.load(f)
+
+    example = {**example, **objects}
+
     with open("data/result.json", "w") as f:
-        json.dump(objects, f, indent=2)
+        json.dump(example, f, indent=2)
 
     # plot_3d(
     #     x=v["x"],
@@ -256,9 +264,6 @@ def main() -> None:
     #     text=v["count"],
     #     color=v["count"],
     # )
-
-    # TODO: unskew everything
-    # TODO: build json
 
     # plot_3d_json()
 
