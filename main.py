@@ -8,9 +8,9 @@ import itertools
 import json
 from DataRotation import correctlyRotateDataFrame
 from LoadE57 import load_e57
-from Plots import plot_3d, plot_3d_json, plot_3d_Grouped_json
+from Plots import plot_3d, plot_3d_json
 
-from utils import timeit
+from src.utils import timeit
 
 global_minX = 0
 global_maxX = 0
