@@ -10,7 +10,7 @@ Currently, running in Docker does not support displaying any plots.
 docker-compose up
 ```
 
-# Manual
+## Manual
 
 ```
 python3.8 -m venv .venv
