@@ -25,19 +25,13 @@ You might have to install xerces
 if you are on Windows or Linux.
 It should work out-of-the-box for macOS.
 
-For Conda users on **Windows**:
+* Conda users on **Windows**: ```conda install xerces-c```
 
-```conda install xerces-c```
+* **Linux** users can just use their package repository: 
 
-**Linux** users can just use their package registry. 
+  * Debian, Ubuntu based systems: ```apt install libxerces-c-dev```
 
-For Debian and Ubuntu based systems:
-
-```apt install libxerces-c-dev```
-
-For Fedora, Red Hat and CentOS based systems:
-
-```dnf install xerces-c-devel```
+  * Fedora, Red Hat, CentOS based systems: ```dnf install xerces-c-devel```
 
 # Credits
 
