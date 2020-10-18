@@ -1,0 +1,13 @@
+version: '3.0'
+
+services:
+
+  mahd3d:
+    build: .
+    container_name: mahd3d
+    command: python3 -u main.py
+    volumes:
+      - .:/app
+    restart: on-failure
+    environment:
+      - IS_DOCKER_COMPOSE=1
