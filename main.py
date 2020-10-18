@@ -232,13 +232,13 @@ def main() -> None:
                 {"x": row["x"] + grid, "y": row["y"] + grid, "id": 3},
                 {"x": row["x"], "y": row["y"] + grid, "id": 4},
             ],
-            "height": row["z"] + Z_adjustment, 
+            "height": row["z"] + Z_adjustment,
             "shape_type": "obstacle",
             "shapeId": shape_id,
         }
         layers += [layer]
         shape = {
-            "userInput":    round(row["z"]*10)/10 + Z_adjustment,
+            "userInput":    round(row["z"] + Z_adjustment),
             "x":            row["x"]*20,
             "y":            row["y"]*20,
             "width":        grid*20,
@@ -260,7 +260,7 @@ def main() -> None:
     ################################################################################
     # go over layes and shapes, remove all non-top layers and shapes
     # also have a minimum high under which we don't consider an object to be an obstacle
-    
+
     cubeEdgeLength = 1
     minimumHeight = 1.2 * cubeEdgeLength
     layersRefined = []
@@ -276,17 +276,17 @@ def main() -> None:
                 hj = layer['height']
 
                 if(((xj >= (xi * cubeEdgeLength)) & (xj < ((xi + 1) * cubeEdgeLength))) & ((yj >= (yi * cubeEdgeLength)) & (yj < ((yi + 1) * cubeEdgeLength))) & (hj >= minimumHeight)):
-                    layersTemp += [layer]  
+                    layersTemp += [layer]
 
             if(len(layersTemp) != 0):
-                maxZ = 0     
+                maxZ = 0
 
                 for index2, lay in enumerate(layersTemp):
 
                     currentZ = lay['height']
 
                     if currentZ> maxZ:
-                        maxZ = currentZ      
+                        maxZ = currentZ
 
                 new_lay = lay.copy()
                 new_lay['height'] = maxZ
@@ -307,7 +307,7 @@ def main() -> None:
 
                 h = lay['height'] - Z_adjustment
 
-                shapeTemp['userInput'] = round(h * 10)/10 + Z_adjustment
+                shapeTemp['userInput'] = round(h + Z_adjustment)
 
                 all_shapesRefined.append(shapeTemp)
 
@@ -328,7 +328,7 @@ def main() -> None:
         "allShapes": all_shapesRefined,
         "layers": layersRefined,
         "scale": {
-            "convertVal": 1.0,
+            "convertVal": 0.05,
             "unit":       "m"
         },
         "ratio": 1.0,
