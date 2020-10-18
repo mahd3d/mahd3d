@@ -81,9 +81,9 @@ def plot_3d_json(
                 x=x,
                 y=y,
                 z=z,
-                color="rgb(255,0,0)",
+                # color="rgb(255,0,0)",
                 # colorbar_title='z',
-                # colorscale=[[0, "gold"], [0.5, "mediumturquoise"], [1, "magenta"]],
+                colorscale=[[0, "gold"], [0.5, "mediumturquoise"], [1, "magenta"]],
                 # Intensity of each vertex, which will be interpolated and color-coded
                 intensity=np.linspace(0, 1, 8, endpoint=True),
                 # i, j and k give the vertices of triangles
