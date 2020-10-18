@@ -110,6 +110,7 @@ def plot_3d_json(
 def plot_3d_Grouped_json(
     file: str = "data/json/objects.example.json",
     objects: Optional[dict] = None,
+    cubeEdgeLength: Optional[int] = 1,
 ) -> None:
     if objects is None:
         with open(file, "r") as f:
@@ -125,7 +126,8 @@ def plot_3d_Grouped_json(
             cubes[layer_index] += [(v["x"], v["y"], float(layer_value["height"]))]
             cubes[layer_index].sort(key=lambda _x: (_x[2], _x[1], _x[0]))
 
-    #COMBINE THE CUBES
+    ################################################################################
+    # START COMBINE THE CUBES
     groupedCubes: list = []
 
     for xi in range (20):
@@ -138,7 +140,7 @@ def plot_3d_Grouped_json(
                 xj = cube[1][0][0]
                 yj = cube[1][0][1]    
 
-                if(((xj > xi) & (xj < xi + 1)) & ((yj > yi) & (yj < yi + 1))):
+                if(((xj > xi) & (xj < xi + cubeEdgeLength)) & ((yj > yi) & (yj < yi + cubeEdgeLength))):
                     square += [cube[1]]   # drop the index, just take the data
 
             if(len(square) != 0):
@@ -172,6 +174,16 @@ def plot_3d_Grouped_json(
                 groupedCubes.append(newCube)
             
     print("groupedCubes finished...")
+
+    # END COMBINE THE CUBES
+    ################################################################################
+
+    ################################################################################
+    # START COMBINE THE BUILDINGS
+    # not sure if we can draw this? but maybe we don't need to... just place it into .json file as an n-gon
+
+    # END COMBINE THE BUILDINGS
+    ################################################################################
 
     # fixed list, do not change or cubes will look weird
     i = [0, 3, 4, 7, 0, 6, 1, 7, 0, 5, 2, 7]
