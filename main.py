@@ -1,4 +1,5 @@
 import uuid
+import math
 
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
@@ -7,7 +8,7 @@ import itertools
 import json
 from DataRotation import correctlyRotateDataFrame
 from LoadE57 import load_e57
-from Plots import plot_3d, plot_3d_Grouped_json
+from Plots import plot_3d, plot_3d_json, plot_3d_Grouped_json
 
 from utils import timeit
 
@@ -215,6 +216,7 @@ def main() -> None:
     # )
 
     grid: float = 1.0
+    Z_adjustment = 2.4995  # hardcoded floor level, not adjusted for tilt
 
     v = get_cubes(p[~p["roof"] & ~p["floor"]], grid)
     v = v[v["c"] > 5]
@@ -230,13 +232,13 @@ def main() -> None:
                 {"x": row["x"] + grid, "y": row["y"] + grid, "id": 3},
                 {"x": row["x"], "y": row["y"] + grid, "id": 4},
             ],
-            "height": row["z"] + 2.4995,  # hardcoded floor level, not adjusted for tilt
+            "height": row["z"] + Z_adjustment, 
             "shape_type": "obstacle",
             "shapeId": shape_id,
         }
         layers += [layer]
         shape = {
-            "userInput":    round(row["z"]*10)/10 + 2.4995,
+            "userInput":    round(row["z"]*10)/10 + Z_adjustment,
             "x":            row["x"]*20,
             "y":            row["y"]*20,
             "width":        grid*20,
@@ -253,9 +255,71 @@ def main() -> None:
         }
         all_shapes += [shape]
 
+    ################################################################################
+    # go over layes and shapes, remove all non-top layers and shapes
+
+    cubeEdgeLength = 1
+    layersRefined = []
+
+    for xi in range (math.floor(global_minX / cubeEdgeLength), math.ceil(global_maxX / cubeEdgeLength)):       # math.floor(global_minX)
+        for yi in range (math.floor(global_minY / cubeEdgeLength), math.ceil(global_maxY / cubeEdgeLength)):
+            layersTemp : list = []
+
+            for index, layer in enumerate(layers):
+
+                xj = layer['points'][0]['x']
+                yj = layer['points'][0]['y']
+
+                if(((xj >= (xi * cubeEdgeLength)) & (xj < ((xi + 1) * cubeEdgeLength))) & ((yj >= (yi * cubeEdgeLength)) & (yj < ((yi + 1) * cubeEdgeLength)))):
+                    layersTemp += [layer]  
+
+            if(len(layersTemp) != 0):
+                maxZ = 0     
+
+                for index2, lay in enumerate(layersTemp):
+
+                    currentZ = lay['height']
+
+                    if currentZ> maxZ:
+                        maxZ = currentZ      
+
+                new_lay = lay.copy()
+                new_lay['height'] = maxZ
+
+                layersRefined.append(new_lay)
+
+    #########
+    # go over shapes, if you can find it's ID in the layersRefined, then keep the shape and change it's height 'Z', otherwise throw it away
+
+    all_shapesRefined = []
+
+    for index, shape in enumerate(all_shapes):
+
+        for index2, lay in enumerate(layersRefined):
+
+            if(shape['sId'] == lay['shapeId']):
+                shapeTemp = shape.copy()
+
+                h = lay['height'] - Z_adjustment
+
+                shapeTemp['userInput'] = round(h * 10)/10 + Z_adjustment
+
+                all_shapesRefined.append(shapeTemp)
+
+        #print("")
+        #print(shape)
+        #print(all_shapesRefined[0])     
+        #print("")   
+
+    ################################################################################
+
+
+
     objects = {
-        "allShapes": all_shapes,
-        "layers": layers,
+        #"allShapes": all_shapes,
+        #"layers": layers,
+        "allShapes": all_shapesRefined,
+        "layers": layersRefined,
         "scale": {
             "convertVal": 1.0,
             "unit":       "m"
@@ -280,9 +344,9 @@ def main() -> None:
     #     color=v["count"],
     # )
 
-    # plot_3d_json()
+    plot_3d_json(objects=objects)
 
-    plot_3d_Grouped_json(objects=objects, global_maxX=global_maxX, global_minX=global_minX, global_maxY=global_maxY, global_minY=global_minY, minimumHeight=minimumHeightOfObstacle)
+#    plot_3d_Grouped_json(objects=objects, global_maxX=global_maxX, global_minX=global_minX, global_maxY=global_maxY, global_minY=global_minY, minimumHeight=minimumHeightOfObstacle)
 
 
 if __name__ == "__main__":
